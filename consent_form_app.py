@@ -1,55 +1,34 @@
 import streamlit as st
 import google.generativeai as genai
+import os
 
-# Configure Gemini API
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+# Load API Key from Streamlit secrets
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# Create Gemini model
-model = genai.GenerativeModel(model="models/gemini-pro")
+# Correct model name (do NOT include "models/")
+model = genai.GenerativeModel("gemini-pro")
 
-# Language options
-languages = {
-    "English": "en",
-    "Tamil": "ta",
-    "Telugu": "te",
-    "Malayalam": "ml",
-    "Kannada": "kn",
-    "Bengali": "bn",
-    "Marathi": "mr",
-    "Bhojpuri": "bho"
-}
+st.set_page_config(page_title="Consent Form Generator", layout="centered")
 
-# Streamlit UI
-st.title("📝 Consent Form AI Generator")
-st.markdown("Generate patient consent forms in your preferred language using AI.")
+st.title("📝 Consent Form Generator (NABH Format)")
+st.markdown("Generate patient-specific consent forms instantly.")
 
-# Form inputs
+# Input fields
 patient_name = st.text_input("Patient Name")
-age = st.text_input("Age")
-procedure = st.text_input("Procedure Name")
-language_selected = st.selectbox("Select Language", list(languages.keys()))
-additional_info = st.text_area("Additional Notes (optional)")
+procedure_name = st.text_input("Consent Name")
+language = st.selectbox("Preferred Language", ["English", "Tamil", "Hindi"])
 
-# Button to generate
+# Button to generate form
 if st.button("Generate Consent Form"):
-    if patient_name and age and procedure:
-        lang_code = languages[language_selected]
-
-        # Prompt to Gemini
-        prompt = (
-            f"Generate a patient consent form in {language_selected} language "
-            f"for a patient named {patient_name}, aged {age}, undergoing {procedure}. "
-            f"Ensure it follows standard Indian hospital consent format. "
-        )
-        if additional_info:
-            prompt += f"Include this extra detail: {additional_info}"
-
-        # Get response from Gemini
-        try:
-            response = model.generate_content(prompt)
-            st.subheader("🧾 Consent Form:")
-            st.write(response.text)
-        except Exception as e:
-            st.error(f"Error: {e}")
+    if not patient_name or not procedure_name:
+        st.warning("Please enter both patient name and procedure name.")
     else:
-        st.warning("Please fill in all required fields (Name, Age, Procedure).")
+        prompt = f"""
+        Generate a medical consent form for patient named {patient_name} undergoing the procedure "{procedure_name}".
+        Format the form according to NABH guidelines.
+        Language: {language}.
+        """
+        with st.spinner("Generating..."):
+            response = model.generate_content(prompt)
+            st.success("Consent Form Generated")
+            st.text_area("Consent Form", response.text, height=400)
