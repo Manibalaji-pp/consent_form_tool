@@ -1,63 +1,55 @@
 import streamlit as st
 import google.generativeai as genai
 
-# Page configuration
-st.set_page_config(
-    page_title="Consent Form Generator",
-    page_icon="📄",
-    layout="centered"
-)
+# Configure Gemini API
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
-# UI Title
-st.title("📝 NABH Consent Form Generator")
-st.write("This tool generates a patient consent form in the selected language.")
+# Create Gemini model
+model = genai.GenerativeModel(model="models/gemini-pro")
 
-# API Key
-api_key = st.text_input("Enter your Gemini API Key:", type="password")
+# Language options
+languages = {
+    "English": "en",
+    "Tamil": "ta",
+    "Telugu": "te",
+    "Malayalam": "ml",
+    "Kannada": "kn",
+    "Bengali": "bn",
+    "Marathi": "mr",
+    "Bhojpuri": "bho"
+}
 
-# Language selection
-language = st.selectbox("Select Language:", ["English", "Tamil", "Telugu", "Malayalam", "Kannada", "Marathi", "Bhojpuri", "Bengali"])
+# Streamlit UI
+st.title("📝 Consent Form AI Generator")
+st.markdown("Generate patient consent forms in your preferred language using AI.")
 
-# Patient details
-name = st.text_input("Patient Name:")
-age = st.text_input("Age:")
-gender = st.selectbox("Gender:", ["Male", "Female", "Other"])
-procedure = st.text_input("Procedure Name:")
-hospital = st.text_input("Hospital Name:")
-date = st.date_input("Consent Date:")
+# Form inputs
+patient_name = st.text_input("Patient Name")
+age = st.text_input("Age")
+procedure = st.text_input("Procedure Name")
+language_selected = st.selectbox("Select Language", list(languages.keys()))
+additional_info = st.text_area("Additional Notes (optional)")
 
-# Button
+# Button to generate
 if st.button("Generate Consent Form"):
-    if all([api_key, name, age, gender, procedure, hospital]):
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
+    if patient_name and age and procedure:
+        lang_code = languages[language_selected]
 
-        prompt = f"""
-        Generate a patient consent form in {language} using the NABH format.
-        Patient name: {name}
-        Age: {age}
-        Gender: {gender}
-        Procedure: {procedure}
-        Hospital: {hospital}
-        Date: {date}
-        The content should be formal, clear, and culturally appropriate.
-        """
+        # Prompt to Gemini
+        prompt = (
+            f"Generate a patient consent form in {language_selected} language "
+            f"for a patient named {patient_name}, aged {age}, undergoing {procedure}. "
+            f"Ensure it follows standard Indian hospital consent format. "
+        )
+        if additional_info:
+            prompt += f"Include this extra detail: {additional_info}"
 
-        with st.spinner("Generating..."):
-            try:
-                response = model.generate_content(prompt)
-                st.subheader("Generated Consent Form:")
-                st.write(response.text)
-
-                # Download button
-                st.download_button(
-                    label="📥 Download Consent Form",
-                    data=response.text,
-                    file_name="consent_form.txt",
-                    mime="text/plain"
-                )
-
-            except Exception as e:
-                st.error(f"Error: {e}")
+        # Get response from Gemini
+        try:
+            response = model.generate_content(prompt)
+            st.subheader("🧾 Consent Form:")
+            st.write(response.text)
+        except Exception as e:
+            st.error(f"Error: {e}")
     else:
-        st.warning("Please fill in all fields and enter your Gemini API key.")
+        st.warning("Please fill in all required fields (Name, Age, Procedure).")
