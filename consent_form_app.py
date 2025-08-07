@@ -9,7 +9,7 @@ GEMINI_API_KEY = "AIzaSyA2yTWB5PbLmlGQwC8bAyxdmTaCvC-62nE"
 
 # Page configuration
 st.set_page_config(
-    page_title="NABH Consent Form Generator",
+    page_title=" Consent Form Generator",
     page_icon="📄",
     layout="centered"
 )
@@ -85,7 +85,7 @@ def validate_inputs(name, age, procedure, hospital):
     return errors
 
 # UI Title and Description
-st.markdown('<h1 class="main-header">📝 NABH Consent Form Generator</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">📝  Consent Form Generator</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Generate professional patient consent forms compliant with NABH standards using AI</p>', unsafe_allow_html=True)
 
 # Create columns for patient information
@@ -261,7 +261,7 @@ if generate_button:
                     
                     # Create filename
                     safe_name = re.sub(r'[^\w\s-]', '', name).strip().replace(' ', '_')
-                    filename = f"NABH_Consent_Form_{safe_name}_{date.strftime('%Y%m%d')}.txt"
+                    filename = f"_Consent_Form_{safe_name}_{date.strftime('%Y%m%d')}.txt"
 
                     col_dl1, col_dl2 = st.columns(2)
                     
