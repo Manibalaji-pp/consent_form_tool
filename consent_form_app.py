@@ -17,7 +17,7 @@ except (FileNotFoundError, KeyError):
 
 # Page configuration
 st.set_page_config(
-    page_title="NABH Consent Form Generator",
+    page_title=" Consent Form Generator",
     page_icon="📄",
     layout="centered"
 )
