@@ -17,7 +17,7 @@ except (FileNotFoundError, KeyError):
 
 # Page configuration
 st.set_page_config(
-    page_title="NABH Consent Form Generator",
+    page_title=" Consent Form Generator",
     page_icon="📄",
     layout="centered"
 )
@@ -30,17 +30,20 @@ st.markdown("""
         color: #2E86AB;
         font-size: 2.5rem;
         margin-bottom: 1rem;
+        font-weight: bold;
     }
     .sub-header {
         text-align: center;
         color: #666;
         margin-bottom: 2rem;
+        font-weight: bold;
     }
     .form-section {
         background-color: #f8f9fa;
         padding: 1.5rem;
         border-radius: 10px;
         margin: 1rem 0;
+        font-weight: bold;
     }
     .consent-form {
         background-color: white;
@@ -49,6 +52,7 @@ st.markdown("""
         border: 1px solid #ddd;
         margin: 1rem 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+         font-weight: bold;
     }
     .stButton > button {
         background-color: #2E86AB;
@@ -203,6 +207,10 @@ if generate_button:
             3. Include proper NABH format with hospital letterhead structure
             4. Make the language clear, respectful, and culturally appropriate
             5. Include all mandatory sections as per Indian healthcare standards
+            6.add diagnosis Column to write
+            7.change treatment as a Consent Tittle
+            8.dont mention NABH in anywhere
+            9.content should be editable 
             
             MANDATORY SECTIONS TO INCLUDE:
             - Hospital/Clinic header information
