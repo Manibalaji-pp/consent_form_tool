@@ -14,14 +14,13 @@ except (FileNotFoundError, KeyError):
     st.error("🚨 Gemini API Key not found! Please add it to your Streamlit secrets.")
     st.stop()
 
+
 # Page configuration
 st.set_page_config(
-    page_title="Consent Form Generator",
+    page_title="NABH Consent Form Generator",
     page_icon="📄",
     layout="centered"
 )
-
-# --- STYLING ---
 
 # Custom CSS for better styling
 st.markdown("""
@@ -66,34 +65,36 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-# --- HELPER FUNCTIONS ---
-
-def validate_inputs(name, age, consent_title, diagnosis, hospital):
-    """Validate user inputs before calling the API"""
+# Helper functions
+def validate_inputs(name, age, procedure, hospital):
+    """Validate user inputs"""
     errors = []
     
-    if not name.strip() or len(name.strip()) < 2:
+    if not name.strip():
+        errors.append("Patient name is required")
+    elif len(name.strip()) < 2:
         errors.append("Patient name must be at least 2 characters long")
     
-    if not age.strip() or not age.isdigit() or not (0 < int(age) <= 150):
+    if not age.strip():
+        errors.append("Age is required")
+    elif not age.isdigit() or int(age) <= 0 or int(age) > 150:
         errors.append("Please enter a valid age (1-150)")
     
-    if not consent_title.strip() or len(consent_title.strip()) < 3:
-        errors.append("Consent form title is required (min 3 characters)")
-        
-    if not diagnosis.strip() or len(diagnosis.strip()) < 3:
-        errors.append("Patient diagnosis is required (min 3 characters)")
+    if not procedure.strip():
+        errors.append("Procedure name is required")
+    elif len(procedure.strip()) < 3:
+        errors.append("Procedure name must be at least 3 characters long")
     
-    if not hospital.strip() or len(hospital.strip()) < 3:
-        errors.append("Hospital name is required (min 3 characters)")
+    if not hospital.strip():
+        errors.append("Hospital name is required")
+    elif len(hospital.strip()) < 3:
+        errors.append("Hospital name must be at least 3 characters long")
     
     return errors
 
-# --- UI COMPONENTS ---
-
-st.markdown('<h1 class="main-header">📝 Consent Form Generator</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Generate and edit professional patient consent forms compliant with NABH standards using AI</p>', unsafe_allow_html=True)
+# UI Title and Description
+st.markdown('<h1 class="main-header">📝 NABH Consent Form Generator</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Generate professional patient consent forms compliant with NABH standards using AI</p>', unsafe_allow_html=True)
 
 # Create columns for patient information
 col1, col2 = st.columns([1, 1])
@@ -109,10 +110,7 @@ with col1:
 with col2:
     st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.subheader("🏥 Medical Information")
-    # CHANGED: 'Procedure' is now 'Consent Form Title'
-    consent_title = st.text_input("Consent Form Title:", placeholder="e.g., Informed Consent for Surgery")
-    # ADDED: New 'Diagnosis' field
-    diagnosis = st.text_input("Patient Diagnosis:", placeholder="e.g., Acute Appendicitis")
+    procedure = st.text_input("Medical Procedure/Treatment:", placeholder="Enter procedure name")
     hospital = st.text_input("Hospital/Clinic Name:", placeholder="Enter hospital name")
     date = st.date_input("Consent Date:", value=datetime.now().date())
     st.markdown('</div>', unsafe_allow_html=True)
@@ -136,7 +134,8 @@ with col4:
         help="Choose the level of detail for the consent form"
     )
 
-st.subheader("📋 Form Sections to Include")
+# Additional options
+st.subheader("📋 Form Sections")
 col5, col6 = st.columns([1, 1])
 with col5:
     include_risks = st.checkbox("Include Risk Disclosure", value=True)
@@ -151,79 +150,100 @@ st.markdown('</div>', unsafe_allow_html=True)
 # Optional additional information
 with st.expander("👨‍⚕️ Additional Information (Optional)"):
     doctor_name = st.text_input("Attending Doctor Name:", placeholder="Dr. John Smith")
-    department = st.text_input("Department:", placeholder="e.g., Cardiology, Surgery")
+    department = st.text_input("Department:", placeholder="e.g., Cardiology, Surgery, General Medicine")
     contact_number = st.text_input("Hospital Contact Number:", placeholder="+91-XXXXXXXXXX")
-    special_instructions = st.text_area("Special Instructions/Notes:", placeholder="e.g., Patient has a known allergy to...")
+    special_instructions = st.text_area("Special Instructions/Notes:", placeholder="Any specific instructions or notes")
 
-# --- GENERATION LOGIC ---
-
+# Generate button
 st.markdown("---")
 col_center = st.columns([1, 2, 1])
 with col_center[1]:
     generate_button = st.button("🚀 Generate NABH Consent Form", type="primary", use_container_width=True)
 
+# Generation logic
 if generate_button:
-    # Validate inputs with the new fields
-    validation_errors = validate_inputs(name, age, consent_title, diagnosis, hospital)
+    # Validate inputs
+    validation_errors = validate_inputs(name, age, procedure, hospital)
     
     if validation_errors:
-        st.error("❌ Please fix the following errors before generating:")
+        st.error("❌ Please fix the following errors:")
         for error in validation_errors:
             st.write(f"• {error}")
     else:
         try:
+            # Configure Gemini API with hidden API key
+            genai.configure(api_key=GEMINI_API_KEY)
             model = genai.GenerativeModel('gemini-1.5-flash')
 
-            # Create a more detailed and robust prompt
+            # Create comprehensive prompt
             prompt = f"""
-            Task: Generate a professional patient consent form.
-            Language: {language}
-            Standards: NABH (National Accreditation Board for Hospitals & Healthcare Providers) and general Indian healthcare regulations.
-            Form Title: "{consent_title}" (This should be the main heading of the document).
-            
-            PATIENT & CONTEXT:
+            Generate a professional patient consent form in {language} language following NABH (National Accreditation Board for Hospitals & Healthcare Providers) standards and Indian healthcare regulations.
+
+            PATIENT DETAILS:
             - Patient Name: {name}
             - Age: {age} years
             - Gender: {gender}
-            - Diagnosis: {diagnosis}
-            - Hospital/Facility: {hospital}
-            - Date of Consent: {date.strftime('%d-%B-%Y')}
+            - Medical Procedure/Treatment: {procedure}
+            - Hospital/Healthcare Facility: {hospital}
+            - Date of Consent: {date}
             """
             
-            if doctor_name: prompt += f"- Attending Doctor: {doctor_name}\n"
-            if department: prompt += f"- Department: {department}\n"
+            if doctor_name:
+                prompt += f"- Attending Doctor: {doctor_name}\n"
+            if department:
+                prompt += f"- Department/Specialty: {department}\n"
+            if contact_number:
+                prompt += f"- Hospital Contact: {contact_number}\n"
 
             prompt += f"""
-            
+
             FORM REQUIREMENTS:
-            1. Create a {form_type.lower()} consent form. The main heading of the document must be "{consent_title}" translated appropriately into {language}.
-            2. Use clear, formal, and respectful language suitable for a patient.
-            3. Structure the form with a proper hospital letterhead feel.
+            1. Generate a {form_type.lower()} consent form that is legally compliant
+            2. Use formal medical terminology appropriate for {language}
+            3. Include proper NABH format with hospital letterhead structure
+            4. Make the language clear, respectful, and culturally appropriate
+            5. Include all mandatory sections as per Indian healthcare standards
             
-            MANDATORY SECTIONS:
-            - Hospital/Clinic Header
-            - A clear title: "{consent_title}" in {language}
-            - Patient Identification
-            - Introduction and Purpose of Consent
-            - Explanation of the proposed procedure/treatment related to the diagnosis '{diagnosis}'.
-            - Doctor/Medical Team Information
+            MANDATORY SECTIONS TO INCLUDE:
+            - Hospital/Clinic header information
+            - Patient identification details
+            - Procedure description and purpose
+            - Doctor/medical team information
+            - Consent declaration statements
+            - Patient rights and responsibilities
             """
 
-            if include_risks: prompt += "- Detailed disclosure of potential risks, benefits, and complications.\n"
-            if include_alternatives: prompt += "- Explanation of alternative treatment options and their risks/benefits.\n"
-            if include_emergency: prompt += "- Section for Emergency Contact Information.\n"
-            if include_witness: prompt += "- Section for a Witness signature.\n"
+            if include_risks:
+                prompt += "- Detailed risk disclosure and complications section\n"
+            if include_alternatives:
+                prompt += "- Alternative treatment options section\n"
+            if include_emergency:
+                prompt += "- Emergency contact information section\n"
+            if include_witness:
+                prompt += "- Witness signature section\n"
 
             prompt += """
-            - Consent Declaration Statement (I, the undersigned, hereby consent...)
-            - Patient Rights (including the right to revoke consent)
-            - Signature section for Patient (or Guardian), Doctor, and Witness (if included).
-            - Fields for Date and Time of signing.
+            - Signature sections for patient, doctor, and witness
+            - Date and time fields
+            - Legal disclaimers as per NABH standards
             
-            SPECIAL INSTRUCTIONS:
-            - {special_instructions if special_instructions else "None"}
+            ADDITIONAL REQUIREMENTS:
+            - Format the document with proper spacing and sections
+            - Use professional medical language
+            - Include fields for signatures and dates
+            - Add appropriate legal disclaimers
+            - Ensure compliance with Patient Rights Charter
+            - Include revocation rights information
+            """
+
+            if special_instructions:
+                prompt += f"- Special Instructions: {special_instructions}\n"
+
+            prompt += """
             
-            Please generate the full text of the consent form now, ready for printing.
+            The consent form should be ready for printing and official use in a healthcare facility.
+            Make it comprehensive but easy to understand for patients and their families.
+            Format it properly with clear sections and professional appearance.
             """
 
             # Generate consent form using Gemini AI
@@ -233,85 +253,124 @@ if generate_button:
                 if response and response.text:
                     st.success("✅ AI-generated consent form created successfully!")
                     
+                    # Display the generated form
                     st.markdown('<div class="consent-form">', unsafe_allow_html=True)
-                    
-                    # CHANGED: Dynamic subheader using the user's title
-                    st.subheader(f"📋 Generated Form: {consent_title}")
+                    st.subheader("📋 AI-Generated NABH Consent Form")
                     st.markdown("---")
                     
-                    # CHANGED: Content is now in an editable text area
-                    st.info("You can review and edit the generated content below before downloading.")
-                    edited_content = st.text_area(
-                        label="Editable Consent Form Content", 
-                        value=response.text, 
-                        height=500,
-                        label_visibility="collapsed"
-                    )
+                    # Display the consent form content
+                    st.markdown(response.text)
                     
                     st.markdown('</div>', unsafe_allow_html=True)
 
-                    # --- DOWNLOAD OPTIONS (using the edited content) ---
+                    # Create download options
                     st.markdown("---")
-                    st.subheader("📥 Download Your Edited Form")
+                    st.subheader("📥 Download Options")
                     
-                    # Create a "safe" filename from the consent title
-                    safe_title = re.sub(r'[^\w\s-]', '', consent_title).strip().replace(' ', '_')
-                    filename = f"Consent_{safe_title}_{date.strftime('%Y%m%d')}.txt"
+                    # Create filename
+                    safe_name = re.sub(r'[^\w\s-]', '', name).strip().replace(' ', '_')
+                    filename = f"NABH_Consent_Form_{safe_name}_{date.strftime('%Y%m%d')}.txt"
 
                     col_dl1, col_dl2 = st.columns(2)
                     
                     with col_dl1:
                         st.download_button(
-                            label="📄 Download as Plain Text",
-                            data=edited_content, # Use edited content
+                            label="📄 Download as Text File",
+                            data=response.text,
                             file_name=filename,
                             mime="text/plain",
                             use_container_width=True
                         )
                     
                     with col_dl2:
-                        # Create a formatted version with a header
-                        formatted_download_content = f"""
-{'='*60}
+                        # Create formatted version with header
+                        formatted_content = f"""
+{"="*60}
 AI-GENERATED NABH COMPLIANT CONSENT FORM
-{'='*60}
+{"="*60}
 
-Form Title: {consent_title}
 Hospital: {hospital}
-Patient: {name}
-Diagnosis: {diagnosis}
 Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Patient: {name}
+Procedure: {procedure}
+Language: {language}
+Form Type: {form_type}
 
---- DOCUMENT START ---
+{response.text}
 
-{edited_content}
-
---- DOCUMENT END ---
-{'='*60}
-Generated by the Consent Form Generator using Google Gemini AI.
-This document must be reviewed by legal and medical professionals before use.
-{'='*60}
+{"="*60}
+Generated by Google Gemini AI
+End of Document
+{"="*60}
                         """
                         
                         st.download_button(
-                            label="📋 Download with Header",
-                            data=formatted_download_content, # Use edited content
+                            label="📋 Download Formatted Version",
+                            data=formatted_content,
                             file_name=f"Formatted_{filename}",
                             mime="text/plain",
                             use_container_width=True
                         )
+                    
+                    # Additional information and disclaimer
+                    st.info(f"""
+                    💡 **AI Generation Successful:**
+                    - **Language:** {language}
+                    - **Complexity:** {form_type}
+                    - **AI Model:** Google Gemini 1.5 Flash
+                    - **Sections Included:** {', '.join([
+                        'Risk Disclosure' if include_risks else '',
+                        'Alternative Treatments' if include_alternatives else '',
+                        'Emergency Contacts' if include_emergency else '',
+                        'Witness Section' if include_witness else ''
+                    ]).strip(', ') or 'Basic sections only'}
+                    
+                    **Important Notes:**
+                    - This form was generated using Google Gemini AI
+                    - Please review the generated form carefully before use
+                    - Have it verified by your hospital's legal and medical team
+                    - Ensure all local regulations and hospital policies are met
+                    - Keep signed copies as per legal requirements
+                    """)
+                    
+                    # Success metrics
+                    st.success(f"✨ Professional consent form generated in {language} language using AI technology")
+                    
                 else:
-                    st.error("❌ Failed to generate consent form. The AI response was empty. Please try again.")
+                    st.error("❌ Failed to generate consent form. The AI response was empty.")
 
         except Exception as e:
-            st.error(f"❌ An error occurred: {e}")
-            st.info("This might be due to API key issues, network problems, or service overload. Please check your API key in secrets.toml and try again later.")
+            st.error(f"❌ An error occurred while generating the AI-powered consent form:")
+            st.code(str(e))
+            
+            # Troubleshooting section
+            st.markdown("### 🔧 Troubleshooting")
+            st.info("""
+            **Possible solutions:**
+            1. **Network Issues:** Check your internet connection
+            2. **Service Issues:** Try again after a few moments
+            3. **API Limits:** The service might be temporarily unavailable
+            
+            **Contact Support:** If the problem persists, please contact technical support.
+            """)
 
-# --- FOOTER ---
+# Footer with important information
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #666; font-size: 0.9rem; padding: 2rem 0;'>
-    <p><strong>⚠️ IMPORTANT DISCLAIMER:</strong> This tool is for reference purposes only. All generated forms must be reviewed and approved by qualified medical and legal professionals to ensure compliance with all local regulations and hospital policies.</p>
-    <p style='margin-top: 1rem; font-size: 0.8rem;'>Powered by Google Gemini AI • App Version 2.1</p>
+    <p><strong>⚠️ IMPORTANT DISCLAIMER:</strong></p>
+    <p>This tool generates AI-powered consent forms for reference purposes only. All generated forms must be:</p>
+    <p>• Reviewed by qualified medical professionals<br>
+    • Verified by legal experts<br>
+    • Approved by hospital administration<br>
+    • Compliant with local healthcare regulations</p>
+    
+    <p style='margin-top: 1rem;'>
+    🏥 <strong>NABH Compliant</strong> • 🔒 <strong>Secure</strong> • 🌍 <strong>Multi-language</strong> • 🤖 <strong>AI-Powered</strong>
+    </p>
+    
+    <p style='margin-top: 1rem; font-size: 0.8rem;'>
+    Powered by Google Gemini AI • Version 2.0 • Last Updated: 2024
+    </p>
 </div>
 """, unsafe_allow_html=True)
