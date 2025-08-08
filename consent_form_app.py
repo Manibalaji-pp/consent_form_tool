@@ -17,7 +17,7 @@ except (FileNotFoundError, KeyError):
 
 # Page configuration
 st.set_page_config(
-    page_title=" Consent Form Generator",
+    page_title="NABH Consent Form Generator",
     page_icon="📄",
     layout="centered"
 )
@@ -30,20 +30,17 @@ st.markdown("""
         color: #2E86AB;
         font-size: 2.5rem;
         margin-bottom: 1rem;
-        font-weight: bold;
     }
     .sub-header {
         text-align: center;
         color: #666;
         margin-bottom: 2rem;
-        font-weight: bold;
     }
     .form-section {
         background-color: #f8f9fa;
         padding: 1.5rem;
         border-radius: 10px;
         margin: 1rem 0;
-        font-weight: bold;
     }
     .consent-form {
         background-color: white;
@@ -52,7 +49,6 @@ st.markdown("""
         border: 1px solid #ddd;
         margin: 1rem 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-         font-weight: bold;
     }
     .stButton > button {
         background-color: #2E86AB;
@@ -70,7 +66,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Helper functions
-def validate_inputs(name, age, consent Tittle, hospital):
+def validate_inputs(name, age, procedure, hospital):
     """Validate user inputs"""
     errors = []
     
@@ -84,20 +80,15 @@ def validate_inputs(name, age, consent Tittle, hospital):
     elif not age.isdigit() or int(age) <= 0 or int(age) > 150:
         errors.append("Please enter a valid age (1-150)")
     
-    if not consent Tittle.strip():
-        errors.append("consent Tittle name is required")
-    elif len(consent Tittle.strip()) < 3:
-        errors.append("consent Tittle name must be at least 3 characters long")
+    if not procedure.strip():
+        errors.append("Procedure name is required")
+    elif len(procedure.strip()) < 3:
+        errors.append("Procedure name must be at least 3 characters long")
     
     if not hospital.strip():
         errors.append("Hospital name is required")
     elif len(hospital.strip()) < 3:
         errors.append("Hospital name must be at least 3 characters long")
-
-     if not Diagnosis.strip():
-        errors.append("Diagnosis name is required")
-    elif len(Diagnosis.strip()) < 2:
-        errors.append("Diagnosis name must be at least 2 characters long")
     
     return errors
 
@@ -119,7 +110,7 @@ with col1:
 with col2:
     st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.subheader("🏥 Medical Information")
-    consent Tittle = st.text_input("Medical consent Tittle/Treatment:", placeholder="Enter consent Tittle name")
+    procedure = st.text_input("Medical Procedure/Treatment:", placeholder="Enter procedure name")
     hospital = st.text_input("Hospital/Clinic Name:", placeholder="Enter hospital name")
     date = st.date_input("Consent Date:", value=datetime.now().date())
     st.markdown('</div>', unsafe_allow_html=True)
@@ -167,12 +158,12 @@ with st.expander("👨‍⚕️ Additional Information (Optional)"):
 st.markdown("---")
 col_center = st.columns([1, 2, 1])
 with col_center[1]:
-    generate_button = st.button("🚀 Generate  Consent Form", type="primary", use_container_width=True)
+    generate_button = st.button("🚀 Generate NABH Consent Form", type="primary", use_container_width=True)
 
 # Generation logic
 if generate_button:
     # Validate inputs
-    validation_errors = validate_inputs(name, age, consent Tittle, hospital)
+    validation_errors = validate_inputs(name, age, procedure, hospital)
     
     if validation_errors:
         st.error("❌ Please fix the following errors:")
@@ -192,7 +183,7 @@ if generate_button:
             - Patient Name: {name}
             - Age: {age} years
             - Gender: {gender}
-            - Medical consent Tittle/Treatment: {consent Tittle}
+            - Medical Procedure/Treatment: {procedure}
             - Hospital/Healthcare Facility: {hospital}
             - Date of Consent: {date}
             """
@@ -213,11 +204,10 @@ if generate_button:
             4. Make the language clear, respectful, and culturally appropriate
             5. Include all mandatory sections as per Indian healthcare standards
             
-            
             MANDATORY SECTIONS TO INCLUDE:
             - Hospital/Clinic header information
             - Patient identification details
-            - consent Tittle description and purpose
+            - Procedure description and purpose
             - Doctor/medical team information
             - Consent declaration statements
             - Patient rights and responsibilities
@@ -265,7 +255,7 @@ if generate_button:
                     
                     # Display the generated form
                     st.markdown('<div class="consent-form">', unsafe_allow_html=True)
-                    st.subheader("📋 AI-Generated  Consent Form")
+                    st.subheader("📋 AI-Generated NABH Consent Form")
                     st.markdown("---")
                     
                     # Display the consent form content
@@ -296,13 +286,13 @@ if generate_button:
                         # Create formatted version with header
                         formatted_content = f"""
 {"="*60}
-AI-GENERATED  COMPLIANT CONSENT FORM
+AI-GENERATED NABH COMPLIANT CONSENT FORM
 {"="*60}
 
 Hospital: {hospital}
 Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Patient: {name}
-consent Tittle: {consent Tittle}
+Procedure: {procedure}
 Language: {language}
 Form Type: {form_type}
 
@@ -335,7 +325,13 @@ End of Document
                         'Witness Section' if include_witness else ''
                     ]).strip(', ') or 'Basic sections only'}
                     
-                    
+                    **Important Notes:**
+                    - This form was generated using Google Gemini AI
+                    - Please review the generated form carefully before use
+                    - Have it verified by your hospital's legal and medical team
+                    - Ensure all local regulations and hospital policies are met
+                    - Keep signed copies as per legal requirements
+                    """)
                     
                     # Success metrics
                     st.success(f"✨ Professional consent form generated in {language} language using AI technology")
